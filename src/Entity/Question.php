@@ -2,12 +2,14 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\QuestionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: QuestionRepository::class)]
+#[ApiResource]
 class Question
 {
     #[ORM\Id]
@@ -16,22 +18,22 @@ class Question
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $topic = null;
+    private string $topic;
 
     #[ORM\Column]
-    private ?int $difficulty = null;
+    private int $difficulty;
 
     #[ORM\Column(length: 255)]
-    private ?string $text = null;
+    private string $text;
 
     #[ORM\Column]
     private array $options = [];
 
     #[ORM\Column]
-    private ?int $correct_index = null;
+    private int $correct_index;
 
     #[ORM\Column]
-    private ?bool $used = null;
+    private ?bool $used = false;
 
     /**
      * @var Collection<int, Quiz>
