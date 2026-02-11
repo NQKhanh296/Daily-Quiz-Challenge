@@ -1,46 +1,44 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kvízová Výzva</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <div class="container">
-        <section id="start-screen" class="card">
-            <h1>Denní Kvíz</h1>
-            <p>Vyberte si obtížnost:</p>
-            <div class="difficulty-select">
-                <button class="btn-opt" onclick="startQuiz('easy')">Lehká</button>
-                <button class="btn-opt" onclick="startQuiz('medium')">Střední</button>
-                <button class="btn-opt" onclick="startQuiz('hard')">Těžká</button>
-            </div>
-            <button class="btn-secondary">🏆 Žebříček</button>
-        </section>
+{% extends 'base.html.twig' %}
 
-        <section id="quiz-screen" class="card hidden">
-            <div class="quiz-header">
-                <span id="question-number">Otázka 1/3</span>
-                <span id="timer">Čas: 0s</span>
-            </div>
-            <h2 id="question-text">Načítám otázku...</h2>
-            <div id="answer-buttons" class="answer-grid"></div>
-            <div class="progress-bar">
-                <div id="progress-fill"></div>
-            </div>
-        </section>
+{% block body %}
+<div class="container">
+    <h1>Daily Quiz Challenge</h1>
 
-        <section id="result-screen" class="card hidden">
-            <h2>Kvíz dokončen!</h2>
-            <div class="stats">
-                <p>Body: <strong id="final-score">0</strong></p>
-                <p>Čas: <strong id="final-time">0</strong>s</p>
-                <p>Bonus za rychlost: <strong id="speed-bonus">0</strong></p>
-            </div>
-            <button onclick="location.reload()" class="btn-primary">Hrát znovu</button>
-        </section>
+    <div id="startScreen" class="screen">
+        <h2>Dnešní výzva</h2>
+        <p id="todayTopic">Téma: <span>Načítání...</span></p>
+
+        <div class="buttons">
+            <button onclick="startQuiz(1)">Lehká</button>
+            <button onclick="startQuiz(2)">Střední</button>
+            <button onclick="startQuiz(3)">Těžká</button>
+        </div>
     </div>
-    <script src="js/script.js"></script>
-</body>
-</html>
+
+    <div id="quizScreen" class="screen hidden">
+        <div class="header">
+            <span>Otázka <span id="questionNum">1</span>/3</span>
+            <span> <span id="timer">0</span>s</span>
+        </div>
+
+        <h2 id="questionText">Načítám otázku</h2>
+
+        <div id="answers"></div>
+
+        <p>Skóre: <span id="score">0</span></p>
+    </div>
+
+    <div id="resultScreen" class="screen hidden">
+        <h2> Hotovo!</h2>
+        <p class="big">Tvoje skóre: <span id="finalScore">0</span></p>
+        <p>Čas: <span id="finalTime">0</span>s</p>
+        <button onclick="showLeaderboard()">Zobrazit žebříček</button>
+    </div>
+
+    <div id="leaderboardScreen" class="screen hidden">
+        <h2>Žebříček</h2>
+        <p>Žebříčky budou dostupné brzy.</p>
+        <button onclick="location.reload()">Zpět na start</button>
+    </div>
+</div>
+{% endblock %}
