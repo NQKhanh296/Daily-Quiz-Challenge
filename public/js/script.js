@@ -1,61 +1,166 @@
-const questions = [
-    { q: "V jakém roce vznikla ČR?", a: ["1990", "1993", "1989", "2000"], correct: 1 },
-    { q: "Která planeta je nejblíže Slunci?", a: ["Venuše", "Mars", "Merkur", "Země"], correct: 2 },
-    { q: "Jak se jmenuje zakladatel Symfony?", a: ["Fabien Potencier", "Steve Jobs", "Mark Zuckerberg", "Jan Novák"], correct: 0 }
-];
-
-let currentIdx = 0;
+let currentQuestion = 0;
 let score = 0;
 let timer = 0;
 let timerInterval;
 
-function startQuiz(difficulty) {
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('quiz-screen').classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    loadTodayQuiz();
+});
 
-    timerInterval = setInterval(() => {
-        timer++;
-        document.getElementById('timer').innerText = `Čas: ${timer}s`;
-    }, 1000);
+async function loadTodayQuiz() {
+    try {
+        console.log('Načítám info o kvízu');
+        const response = await fetch('/api/quiz/today');
 
-    showQuestion();
+        if (!response.ok) {
+            throw new Error(`Chyba serveru: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Data z /api/quiz/today:', data);
+
+        const topicElement = document.querySelector('#todayTopic span');
+        if (topicElement) {
+            topicElement.textContent = data.topic || 'Neznámé téma';
+        }
+
+    } catch (error) {
+        console.error('Chyba loadTodayQuiz:', error);
+        document.querySelector('#todayTopic span').textContent = 'Nepodařilo se načíst';
+    }
 }
 
-function showQuestion() {
-    const q = questions[currentIdx];
-    document.getElementById('question-text').innerText = q.q;
-    document.getElementById('question-number').innerText = `Otázka ${currentIdx + 1}/${questions.length}`;
+async function startQuiz(selectedDifficulty) {
+    try {
+        console.log('Spouštím kvíz s obtížností:', selectedDifficulty);
 
-    const container = document.getElementById('answer-buttons');
-    container.innerHTML = '';
+        const response = await fetch('/api/quiz/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ difficulty: selectedDifficulty })
+        });
 
-    q.a.forEach((ans, i) => {
-        const btn = document.createElement('button');
-        btn.innerText = ans;
-        btn.onclick = () => checkAnswer(i);
-        container.appendChild(btn);
-    });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server odmítl start: ${errorText} (Kód: ${response.status})`);
+        }
 
-    document.getElementById('progress-fill').style.width = `${(currentIdx / questions.length) * 100}%`;
+        showScreen('quizScreen');
+        startTimer();
+        loadQuestion();
+
+    } catch (error) {
+        console.error('Chyba startQuiz:', error);
+        alert('Nepodařilo se spustit kvíz:\n' + error.message);
+    }
 }
 
-function checkAnswer(selected) {
-    if (selected === questions[currentIdx].correct) score += 10;
+async function loadQuestion() {
+    try {
+        const response = await fetch('/api/quiz/fetch-question');
 
-    currentIdx++;
-    if (currentIdx < questions.length) {
-        showQuestion();
-    } else {
+        if (!response.ok) {
+            throw new Error('Nepodařilo se stáhnout otázku');
+        }
+
+        const data = await response.json();
+        console.log('Otázka:', data);
+
+        currentQuestion++;
+        document.getElementById('questionNum').textContent = currentQuestion;
+        document.getElementById('questionText').textContent = data.text;
+
+        const answersDiv = document.getElementById('answers');
+        answersDiv.innerHTML = '';
+
+        data.options.forEach((option, index) => {
+            const btn = document.createElement('button');
+            btn.textContent = option;
+            btn.className = 'answer-btn';
+            btn.onclick = () => submitAnswer(index);
+            answersDiv.appendChild(btn);
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert('Konec kvízu nebo chyba: ' + error.message);
         finishQuiz();
     }
 }
 
-function finishQuiz() {
-    clearInterval(timerInterval);
-    document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
+async function submitAnswer(answerIndex) {
+    try {
+        const response = await fetch('/api/quiz/submit-answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answer_index: answerIndex })
+        });
 
-    document.getElementById('final-score').innerText = score;
-    document.getElementById('final-time').innerText = timer;
-    document.getElementById('speed-bonus').innerText = timer < 20 ? 20 : 0;
+        const data = await response.json();
+        console.log('Výsledek odpovědi:', data);
+
+        const buttons = document.querySelectorAll('.answer-btn');
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (data.correct) {
+            buttons[answerIndex].classList.add('correct');
+        } else {
+            buttons[answerIndex].classList.add('wrong');
+            if (data.correct_index !== undefined && buttons[data.correct_index]) {
+                buttons[data.correct_index].classList.add('correct');
+            }
+        }
+
+        if (data.points) {
+            score += data.points;
+        }
+        document.getElementById('score').textContent = score;
+
+        setTimeout(() => {
+            if (currentQuestion < 3) {
+                loadQuestion();
+            } else {
+                finishQuiz();
+            }
+        }, 1500);
+
+    } catch (error) {
+        alert('Chyba při odesílání: ' + error.message);
+    }
+}
+
+function finishQuiz() {
+    stopTimer();
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('finalTime').textContent = timer;
+    showScreen('resultScreen');
+}
+
+function startTimer() {
+    timer = 0;
+    timerInterval = setInterval(() => {
+        timer++;
+        const el = document.getElementById('timer');
+        if(el) el.textContent = timer;
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.add('hidden');
+    });
+    const el = document.getElementById(screenId);
+    if(el) el.classList.remove('hidden');
+}
+
+function showLeaderboard() {
+    showScreen('leaderboardScreen');
+}
+
+function switchTab(type) {
+    console.log("Switch tab:", type);
 }
