@@ -113,15 +113,14 @@ class Attempt
         return $this;
     }
 
-    public function isCompleted(): ?bool
+    public function getIsCompleted(): bool
     {
         return $this->is_completed;
     }
 
-    public function setIsCompleted(bool $is_completed): static
+    public function setIsCompleted(bool $is_completed): self
     {
         $this->is_completed = $is_completed;
-
         return $this;
     }
 }

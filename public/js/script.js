@@ -1,15 +1,61 @@
+let currentWords = [];
 let currentQuestion = 0;
 let score = 0;
 let timer = 0;
 let timerInterval;
 
+// Hned po načtení stránky načteme 3 slova pro login
 document.addEventListener("DOMContentLoaded", function () {
-  loadTodayQuiz();
+  generateNewWords();
 });
+
+// --- AUTHENTIKACE ---
+
+async function generateNewWords() {
+  try {
+    const response = await fetch("/api/registration-code");
+    const data = await response.json();
+    currentWords = data.words;
+
+    const spans = document.querySelectorAll("#wordDisplay .word");
+    currentWords.forEach((word, i) => (spans[i].innerText = word));
+  } catch (e) {
+    console.error("Chyba při načítání slov", e);
+  }
+}
+
+async function authenticateUser() {
+  try {
+    const response = await fetch("/api/authenticate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words: currentWords }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Úspěšně přihlášeno (session cookie nastavena)
+      showScreen("startScreen");
+      loadTodayQuiz();
+    } else {
+      alert("Chyba: " + data.error);
+    }
+  } catch (e) {
+    alert("Server neodpovídá.");
+  }
+}
+
+// --- LOGIKA KVÍZU ---
 
 async function loadTodayQuiz() {
   try {
     const response = await fetch("/api/quiz/today");
+    if (response.status === 404) {
+      document.querySelector("#todayTopic span").textContent =
+        "Dnes není žádný kvíz.";
+      return;
+    }
     const data = await response.json();
     const topicElement = document.querySelector("#todayTopic span");
     if (topicElement) topicElement.textContent = data.topic || "Neznámé téma";
@@ -54,16 +100,26 @@ function renderQuestion(questionData) {
   const answersDiv = document.getElementById("answers");
   answersDiv.innerHTML = "";
 
-  questionData.options.forEach((option, index) => {
+  // Ošetření, pokud options přijdou z backendu jako string
+  let options =
+    typeof questionData.options === "string"
+      ? JSON.parse(questionData.options)
+      : questionData.options;
+
+  options.forEach((option, index) => {
     const btn = document.createElement("button");
     btn.textContent = option;
     btn.className = "answer-btn";
-    btn.onclick = () => submitAnswer(index);
+    btn.onclick = () => submitAnswer(index, btn);
     answersDiv.appendChild(btn);
   });
 }
 
-async function submitAnswer(answerIndex) {
+async function submitAnswer(answerIndex, clickedBtn) {
+  // Okamžitě zablokujeme všechny tlačítka, aby nešlo kliknout víckrát
+  const buttons = document.querySelectorAll(".answer-btn");
+  buttons.forEach((btn) => (btn.disabled = true));
+
   try {
     const response = await fetch("/api/quiz/submit-answer", {
       method: "POST",
@@ -72,18 +128,19 @@ async function submitAnswer(answerIndex) {
     });
 
     const data = await response.json();
-    const buttons = document.querySelectorAll(".answer-btn");
-    buttons.forEach((btn) => (btn.disabled = true));
 
+    // Obarvení správné/špatné
     if (data.correct) {
-      buttons[answerIndex].classList.add("correct");
+      clickedBtn.classList.add("correct");
     } else {
-      buttons[answerIndex].classList.add("wrong");
+      clickedBtn.classList.add("wrong");
+      // Ukážeme správnou odpověď
       if (data.correct_index !== undefined && buttons[data.correct_index]) {
         buttons[data.correct_index].classList.add("correct");
       }
     }
 
+    // Přičtení bodů (čistá logika bez DOM innerText, DOM updatujeme na konci)
     if (data.earned_points) {
       score += data.earned_points;
       document.getElementById("score").textContent = score;
@@ -94,7 +151,7 @@ async function submitAnswer(answerIndex) {
       currentQuestion < 3 ? "Další otázka" : "Dokončit kvíz";
     nextBtn.classList.remove("hidden");
   } catch (error) {
-    alert("Chyba: " + error.message);
+    alert("Chyba při odesílání odpovědi.");
   }
 }
 
@@ -102,7 +159,8 @@ function handleNextStep() {
   if (currentQuestion < 3) {
     loadQuestion();
   } else {
-    fetchFinalResults();
+    // Pokud jsme u otázky 3 a klikneme "Dokončit kvíz", musíme zavolat API pro dokončení
+    finishQuizRequest();
   }
 }
 
@@ -112,36 +170,46 @@ async function loadQuestion() {
     const data = await response.json();
 
     if (data.status === "finished") {
-      finishQuiz(data.total_points);
+      showFinalResults(data.total_points);
       return;
     }
     renderQuestion(data);
   } catch (error) {
-    finishQuiz();
+    alert("Chyba při načítání další otázky.");
   }
 }
 
-async function fetchFinalResults() {
+async function finishQuizRequest() {
   try {
+    // Zavoláme fetch-question i když víme, že jsme na konci. Backend pozná, že step >= 3 a pokus uzavře.
     const response = await fetch("/api/quiz/fetch-question");
     const data = await response.json();
+
     if (data.status === "finished") {
-      finishQuiz(data.total_points);
+      showFinalResults(data.total_points);
     }
   } catch (e) {
-    finishQuiz();
+    showFinalResults(score); // Fallback
   }
 }
 
-function finishQuiz(totalPoints) {
+function showFinalResults(totalPoints) {
   stopTimer();
   document.getElementById("finalScore").textContent = totalPoints || score;
   document.getElementById("finalTime").textContent = timer;
   showScreen("resultScreen");
 }
 
+function showLeaderboard() {
+  showScreen("leaderboardScreen");
+  // Tady pak můžeš přidat fetch pro /api/leaderboard
+}
+
+// --- POMOCNÉ FUNKCE ---
+
 function startTimer() {
   timer = 0;
+  document.getElementById("timer").textContent = timer;
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     timer++;

@@ -1,10 +1,33 @@
+
 {% extends 'base.html.twig' %}
+
+{# Zde připojujeme tvůj CSS soubor (pokud ho máš ve složce public/css) #}
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+{% endblock %}
 
 {% block body %}
 <div class="container">
     <h1>Daily Quiz Challenge</h1>
 
-    <div id="startScreen" class="screen">
+    <div id="authScreen" class="screen">
+        <h2>Vítej! Získej svůj kód</h2>
+        <p style="text-align:center;">Pro účast v dnešním kvízu potřebuješ unikátní kombinaci 3 slov.</p>
+        
+        <div id="wordDisplay" class="word-box">
+            <span class="word">...</span> 
+            <span class="word">...</span> 
+            <span class="word">...</span>
+        </div>
+        
+        <div class="buttons">
+            <button onclick="generateNewWords()" id="genBtn">Vygenerovat jiná slova</button>
+            <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
+        </div>
+        <p class="small" style="text-align:center; margin-top:15px; color:#94a3b8;">Tato slova si zapamatuj, slouží jako tvůj login pro příště.</p>
+    </div>
+
+    <div id="startScreen" class="screen hidden">
         <h2>Dnešní výzva</h2>
         <p id="todayTopic">Téma: <span>Načítání...</span></p>
 
@@ -29,20 +52,29 @@
             <button id="nextBtn" class="hidden" onclick="handleNextStep()">Další otázka</button>
         </div>
 
-        <p>Skóre: <span id="score">0</span></p>
+        <p style="text-align:center;">Skóre: <span id="score">0</span></p>
     </div>
 
     <div id="resultScreen" class="screen hidden">
-        <h2> Hotovo!</h2>
+        <h2>Hotovo!</h2>
         <p class="big">Tvoje skóre: <span id="finalScore">0</span></p>
-        <p>Čas: <span id="finalTime">0</span>s</p>
-        <button onclick="showLeaderboard()">Zobrazit žebříček</button>
+        <p style="text-align:center;">Čas: <span id="finalTime">0</span>s</p>
+        <button class="primary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
 
     <div id="leaderboardScreen" class="screen hidden">
-        <h2>Žebříček</h2>
-        <p>Žebříčky budou dostupné brzy.</p>
-        <button onclick="location.reload()">Zpět na start</button>
+    <h2>Žebříček TOP 10</h2>
+    <ul id="leaderboardList" class="leaderboard-list">
+        </ul>
+    <div class="buttons">
+        <button class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
+        <button onclick="logout()">Odhlásit se</button>
+    </div>
     </div>
 </div>
+{% endblock %}
+
+{# Zde připojujeme tvůj JavaScript (pokud ho máš ve složce public/js) #}
+{% block javascripts %}
+    <script src="{{ asset('js/script.js') }}"></script>
 {% endblock %}
