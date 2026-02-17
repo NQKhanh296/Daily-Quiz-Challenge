@@ -11,8 +11,8 @@
     <h1>Daily Quiz Challenge</h1>
 
     <div id="authScreen" class="screen">
-        <h2>Vítej! Získej svůj kód</h2>
-        <p style="text-align:center;">Pro účast v dnešním kvízu potřebuješ unikátní kombinaci 3 slov.</p>
+        <h2>Vítej v Challenge</h2>
+        <p style="text-align:center; color: var(--text-muted);">Získej nový kód nebo se vrať ke svému účtu.</p>
         
         <div id="wordDisplay" class="word-box">
             <span class="word">...</span> 
@@ -20,12 +20,19 @@
             <span class="word">...</span>
         </div>
         
-        <div class="buttons">
-            <button onclick="generateNewWords()" id="genBtn">Vygenerovat jiná slova</button>
-            <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
-        </div>
-        <p class="small" style="text-align:center; margin-top:15px; color:#94a3b8;">Tato slova si zapamatuj, slouží jako tvůj login pro příště.</p>
+        <button onclick="generateNewWords()" id="genBtn">Vygenerovat jiná slova</button>
+
+        <div class="divider">nebo zadej svůj kód</div>
+
+        <input type="text" id="manualWords" placeholder="slovo1 slovo2 slovo3">
+        
+        <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
+        
+        <p class="small" style="text-align:center; margin-top:15px; color:#64748b; font-size: 0.8rem;">
+            Slova slouží jako váš unikátní login.
+        </p>
     </div>
+
 
     <div id="startScreen" class="screen hidden">
         <h2>Dnešní výzva</h2>

@@ -4,12 +4,9 @@ let score = 0;
 let timer = 0;
 let timerInterval;
 
-// Hned po načtení stránky načteme 3 slova pro login
 document.addEventListener("DOMContentLoaded", function () {
   generateNewWords();
 });
-
-// --- AUTHENTIKACE ---
 
 async function generateNewWords() {
   try {
@@ -25,17 +22,30 @@ async function generateNewWords() {
 }
 
 async function authenticateUser() {
+  let words = [];
+  const manualInput = document.getElementById("manualWords").value.trim();
+
+  if (manualInput) {
+    words = manualInput.split(/[\s,]+/).filter((w) => w.length > 0);
+  } else {
+    words = currentWords;
+  }
+
+  if (words.length !== 3) {
+    alert("Musíš zadat přesně 3 slova!");
+    return;
+  }
+
   try {
     const response = await fetch("/api/authenticate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: currentWords }),
+      body: JSON.stringify({ words: words }),
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      // Úspěšně přihlášeno (session cookie nastavena)
       showScreen("startScreen");
       loadTodayQuiz();
     } else {
@@ -45,8 +55,6 @@ async function authenticateUser() {
     alert("Server neodpovídá.");
   }
 }
-
-// --- LOGIKA KVÍZU ---
 
 async function loadTodayQuiz() {
   try {
@@ -200,12 +208,49 @@ function showFinalResults(totalPoints) {
   showScreen("resultScreen");
 }
 
-function showLeaderboard() {
+async function showLeaderboard() {
   showScreen("leaderboardScreen");
-  // Tady pak můžeš přidat fetch pro /api/leaderboard
-}
 
-// --- POMOCNÉ FUNKCE ---
+  const listEl = document.getElementById("leaderboardList");
+  listEl.innerHTML = "<li>Načítám...</li>";
+
+  try {
+    const response = await fetch("/api/leaderboard");
+    if (!response.ok) throw new Error("Nepodařilo se načíst žebříček");
+
+    const data = await response.json();
+    listEl.innerHTML = "";
+
+    data.forEach((user, index) => {
+      const li = document.createElement("li");
+      li.className = "leaderboard-item";
+
+      const rankSpan = document.createElement("span");
+      rankSpan.className = "rank";
+      rankSpan.textContent = index + 1;
+
+      // Zvýraznění top 3
+      if (index === 0) rankSpan.classList.add("top1");
+      else if (index === 1) rankSpan.classList.add("top2");
+      else if (index === 2) rankSpan.classList.add("top3");
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = user.username;
+
+      const scoreSpan = document.createElement("span");
+      scoreSpan.textContent = user.score;
+
+      li.appendChild(rankSpan);
+      li.appendChild(nameSpan);
+      li.appendChild(scoreSpan);
+
+      listEl.appendChild(li);
+    });
+  } catch (error) {
+    listEl.innerHTML = "<li>Chyba při načítání žebříčku.</li>";
+    console.error(error);
+  }
+}
 
 function startTimer() {
   timer = 0;
