@@ -108,7 +108,6 @@ function renderQuestion(questionData) {
   const answersDiv = document.getElementById("answers");
   answersDiv.innerHTML = "";
 
-  // Ošetření, pokud options přijdou z backendu jako string
   let options =
     typeof questionData.options === "string"
       ? JSON.parse(questionData.options)
@@ -124,7 +123,6 @@ function renderQuestion(questionData) {
 }
 
 async function submitAnswer(answerIndex, clickedBtn) {
-  // Okamžitě zablokujeme všechny tlačítka, aby nešlo kliknout víckrát
   const buttons = document.querySelectorAll(".answer-btn");
   buttons.forEach((btn) => (btn.disabled = true));
 
@@ -137,18 +135,15 @@ async function submitAnswer(answerIndex, clickedBtn) {
 
     const data = await response.json();
 
-    // Obarvení správné/špatné
     if (data.correct) {
       clickedBtn.classList.add("correct");
     } else {
       clickedBtn.classList.add("wrong");
-      // Ukážeme správnou odpověď
       if (data.correct_index !== undefined && buttons[data.correct_index]) {
         buttons[data.correct_index].classList.add("correct");
       }
     }
 
-    // Přičtení bodů (čistá logika bez DOM innerText, DOM updatujeme na konci)
     if (data.earned_points) {
       score += data.earned_points;
       document.getElementById("score").textContent = score;
@@ -167,7 +162,6 @@ function handleNextStep() {
   if (currentQuestion < 3) {
     loadQuestion();
   } else {
-    // Pokud jsme u otázky 3 a klikneme "Dokončit kvíz", musíme zavolat API pro dokončení
     finishQuizRequest();
   }
 }
@@ -189,7 +183,6 @@ async function loadQuestion() {
 
 async function finishQuizRequest() {
   try {
-    // Zavoláme fetch-question i když víme, že jsme na konci. Backend pozná, že step >= 3 a pokus uzavře.
     const response = await fetch("/api/quiz/fetch-question");
     const data = await response.json();
 
@@ -197,7 +190,7 @@ async function finishQuizRequest() {
       showFinalResults(data.total_points);
     }
   } catch (e) {
-    showFinalResults(score); // Fallback
+    showFinalResults(score);
   }
 }
 
@@ -229,7 +222,6 @@ async function showLeaderboard() {
       rankSpan.className = "rank";
       rankSpan.textContent = index + 1;
 
-      // Zvýraznění top 3
       if (index === 0) rankSpan.classList.add("top1");
       else if (index === 1) rankSpan.classList.add("top2");
       else if (index === 2) rankSpan.classList.add("top3");
