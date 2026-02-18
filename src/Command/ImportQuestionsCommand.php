@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'app:import-questions')]
-class ImportCsvCommand extends Command
+class ImportQuestionsCommand extends Command
 {
     public function __construct(private EntityManagerInterface $em) {
         parent::__construct();
