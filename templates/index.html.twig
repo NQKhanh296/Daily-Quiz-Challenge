@@ -1,7 +1,5 @@
-
 {% extends 'base.html.twig' %}
 
-{# Zde připojujeme tvůj CSS soubor (pokud ho máš ve složce public/css) #}
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 {% endblock %}
@@ -12,27 +10,26 @@
 
     <div id="authScreen" class="screen">
         <h2>Vítej v Challenge</h2>
-        <p style="text-align:center; color: var(--text-muted);">Získej nový kód nebo se vrať ke svému účtu.</p>
-        
+        <p style="text-align:center; color: #94a3b8;">Získej nový kód nebo se vrať ke svému účtu.</p>
+
         <div id="wordDisplay" class="word-box">
-            <span class="word">...</span> 
-            <span class="word">...</span> 
+            <span class="word">...</span>
+            <span class="word">...</span>
             <span class="word">...</span>
         </div>
-        
+
         <button onclick="generateNewWords()" id="genBtn">Vygenerovat jiná slova</button>
 
         <div class="divider">nebo zadej svůj kód</div>
 
-        <input type="text" id="manualWords" placeholder="slovo1 slovo2 slovo3">
-        
+        <input type="password" id="manualWords" placeholder="slovo1 slovo2 slovo3">
+
         <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
-        
+
         <p class="small" style="text-align:center; margin-top:15px; color:#64748b; font-size: 0.8rem;">
             Slova slouží jako váš unikátní login.
         </p>
     </div>
-
 
     <div id="startScreen" class="screen hidden">
         <h2>Dnešní výzva</h2>
@@ -43,6 +40,9 @@
             <button onclick="startQuiz(2)">Střední</button>
             <button onclick="startQuiz(3)">Těžká</button>
         </div>
+
+        <div class="divider">nebo se podívej na ostatní</div>
+        <button onclick="showLeaderboard()" style="background: #475569;">Zobrazit žebříček</button>
     </div>
 
     <div id="quizScreen" class="screen hidden">
@@ -64,24 +64,28 @@
 
     <div id="resultScreen" class="screen hidden">
         <h2>Hotovo!</h2>
-        <p class="big">Tvoje skóre: <span id="finalScore">0</span></p>
+        <p style="font-size: 2rem; color: #6366f1;">Tvoje skóre: <span id="finalScore">0</span></p>
         <p style="text-align:center;">Čas: <span id="finalTime">0</span>s</p>
         <button class="primary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
 
     <div id="leaderboardScreen" class="screen hidden">
-    <h2>Žebříček TOP 10</h2>
-    <ul id="leaderboardList" class="leaderboard-list">
-        </ul>
-    <div class="buttons">
-        <button class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
-        <button onclick="logout()">Odhlásit se</button>
-    </div>
+        <h2>Žebříček TOP 10</h2>
+
+        <div class="current-user-stats">
+            <strong>Tvůj výsledek:</strong> <span id="playerCurrentAttempt">0</span> bodů (<span id="playerCurrentTime">0</span>s)
+        </div>
+
+        <ul id="leaderboardList" class="leaderboard-list"></ul>
+
+        <div class="buttons">
+            <button class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
+            <button onclick="logout()">Odhlásit se</button>
+        </div>
     </div>
 </div>
 {% endblock %}
 
-{# Zde připojujeme tvůj JavaScript (pokud ho máš ve složce public/js) #}
 {% block javascripts %}
     <script src="{{ asset('js/script.js') }}"></script>
 {% endblock %}
