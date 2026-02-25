@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -8,6 +12,7 @@ body {
 
 .container {
   max-width: 500px;
+  width: 95%;
   margin: 0 auto;
   text-align: center;
 }
@@ -43,6 +48,7 @@ h2 {
 .word-box {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 20px 0;
 }
@@ -116,6 +122,11 @@ button.primary {
 
 button.primary:hover {
   background: #059669;
+}
+
+button:focus, input:focus {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
 }
 
 p.small {
