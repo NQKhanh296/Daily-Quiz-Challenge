@@ -45,6 +45,19 @@ h2 {
   display: none;
 }
 
+.subtitle {
+  text-align: center;
+  color: #94a3b8;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
 .word-box {
   display: flex;
   justify-content: center;
@@ -83,7 +96,7 @@ h2 {
   vertical-align: middle;
 }
 
-#manualWords {
+.input-field {
   width: 100%;
   padding: 12px 15px;
   border-radius: 10px;
@@ -94,7 +107,7 @@ h2 {
   margin-bottom: 15px;
 }
 
-#manualWords::placeholder {
+.input-field::placeholder {
   color: #94a3b8;
 }
 
@@ -124,15 +137,24 @@ button.primary:hover {
   background: #059669;
 }
 
-button:focus, input:focus {
+button.secondary {
+  background: #475569;
+}
+
+button.secondary:hover {
+  background: #334155;
+}
+
+button:focus, .input-field:focus {
   outline: 3px solid #fbbf24;
   outline-offset: 2px;
 }
 
 p.small {
-  font-size: 0.8rem;
-  color: #94a3b8;
+  text-align: center;
   margin-top: 15px;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .header {
@@ -162,6 +184,10 @@ p.small {
   background: #ef4444;
 }
 
+.controls {
+  margin-top: 20px;
+}
+
 #score,
 #timer {
   font-weight: bold;
@@ -174,6 +200,7 @@ p.small {
   margin-bottom: 10px;
 }
 
+/* === Žebříček a účet === */
 .leaderboard-list {
   list-style: none;
   padding: 0;
@@ -206,4 +233,12 @@ p.small {
 }
 .rank.top3 {
   color: #fb923c;
+}
+
+.current-user-stats {
+  strong { margin-right: 5px; }
+}
+
+#changeUsernameForm {
+  margin-top: 10px;
 }
