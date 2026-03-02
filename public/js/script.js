@@ -40,6 +40,7 @@ async function authenticateUser() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ words: words }),
+      credentials: 'include',
     });
 
     if (response.ok) {
@@ -167,15 +168,24 @@ async function finishQuiz() {
   showFinalResults(data.total_points || score);
 }
 
+let lastScore = 0;
+let lastTime = 0;
+
 function showFinalResults(totalPoints) {
   stopTimer();
-  document.getElementById("finalScore").textContent = totalPoints;
-  document.getElementById("finalTime").textContent = timer;
+  lastScore = totalPoints;
+  lastTime = timer;
+  document.getElementById("finalScore").textContent = lastScore;
+  document.getElementById("finalTime").textContent = lastTime;
   showScreen("resultScreen");
 }
 
 async function showLeaderboard() {
   showScreen("leaderboardScreen");
+
+  document.getElementById("playerCurrentAttempt").textContent = lastScore;
+  document.getElementById("playerCurrentTime").textContent = lastTime;
+
   const listEl = document.getElementById("leaderboardList");
   listEl.innerHTML = "<li>Načítám...</li>";
 
@@ -192,6 +202,48 @@ async function showLeaderboard() {
       listEl.appendChild(li);
     });
   } catch (e) { listEl.innerHTML = "<li>Chyba žebříčku.</li>"; }
+}
+
+async function changeUsername() {
+  const input = document.getElementById("newUsernameInput");
+  const newUsername = input.value.trim();
+
+  if (!newUsername) {
+    alert("Zadej nové jméno!");
+    return;
+  }
+
+  const response = await fetch('/api/user/change-username', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({ username: newUsername }),
+    credentials: 'include'
+  });
+
+  const data = await response.json();
+
+  if (response.status === 200) {
+    alert("Jméno bylo změněno!");
+    input.value = "";
+    document.getElementById("changeUsernameForm").classList.add("hidden");
+  } else if (response.status === 429) {
+    alert("Příliš mnoho pokusů, zkus to za 15 minut.");
+  } else if (response.status === 422) {
+    alert("Chyba validace: " + data.errors);
+  } else if (response.status === 401) {
+    alert("Nejsi přihlášen.");
+    location.reload();
+  } else {
+    alert("Chyba: " + (data.error || "Neznámá chyba"));
+  }
+}
+
+function toggleUsernameForm() {
+  const form = document.getElementById("changeUsernameForm");
+  form.classList.toggle("hidden");
 }
 
 function startTimer() {
