@@ -1,0 +1,10 @@
+framework:
+  rate_limiter:
+    auth:
+      policy: "fixed_window"
+      limit: 5
+      interval: "1 minute"
+    username_change:
+      policy: "token_bucket"
+      limit: 3
+      rate: { interval: "15 minutes", amount: 1 }
