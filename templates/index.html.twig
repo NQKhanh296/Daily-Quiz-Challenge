@@ -10,7 +10,7 @@
 
     <div id="authScreen" class="screen">
         <h2>Vítej v Challenge</h2>
-        <p style="text-align:center; color: #94a3b8;">Získej nový kód nebo se vrať ke svému účtu.</p>
+        <p class="subtitle">Získej nový kód nebo se vrať ke svému účtu.</p>
 
         <div id="wordDisplay" class="word-box">
             <span class="word">...</span>
@@ -22,11 +22,11 @@
 
         <div class="divider">nebo zadej svůj kód</div>
 
-        <input type="password" id="manualWords" placeholder="slovo1 slovo2 slovo3">
+        <input type="password" id="manualWords" class="input-field" placeholder="slovo1 slovo2 slovo3">
 
         <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
 
-        <p class="small" style="text-align:center; margin-top:15px; color:#64748b; font-size: 0.8rem;">
+        <p class="small">
             Slova slouží jako váš unikátní login.
         </p>
     </div>
@@ -42,7 +42,7 @@
         </div>
 
         <div class="divider">nebo se podívej na ostatní</div>
-        <button onclick="showLeaderboard()" style="background: #475569;">Zobrazit žebříček</button>
+        <button class="secondary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
 
     <div id="quizScreen" class="screen hidden">
@@ -55,17 +55,17 @@
 
         <div id="answers"></div>
 
-        <div class="controls" style="margin-top: 20px;">
+        <div class="controls">
             <button id="nextBtn" class="hidden" onclick="handleNextStep()">Další otázka</button>
         </div>
 
-        <p style="text-align:center;">Skóre: <span id="score">0</span></p>
+        <p class="text-center">Skóre: <span id="score">0</span></p>
     </div>
 
     <div id="resultScreen" class="screen hidden">
         <h2>Hotovo!</h2>
-        <p style="font-size: 2rem; color: #6366f1;">Tvoje skóre: <span id="finalScore">0</span></p>
-        <p style="text-align:center;">Čas: <span id="finalTime">0</span>s</p>
+        <p class="big">Tvoje skóre: <span id="finalScore">0</span></p>
+        <p class="text-center">Čas: <span id="finalTime">0</span>s</p>
         <button class="primary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
 
@@ -78,7 +78,16 @@
 
         <ul id="leaderboardList" class="leaderboard-list"></ul>
 
-        <div class="buttons">
+        <div class="divider">nastavení účtu</div>
+
+        <button class="secondary" onclick="toggleUsernameForm()"> Změnit jméno</button>
+
+        <div id="changeUsernameForm" class="hidden">
+            <input type="text" id="newUsernameInput" class="input-field" placeholder="Nové uživatelské jméno">
+            <button class="primary" onclick="changeUsername()">Uložit jméno</button>
+        </div>
+
+        <div class="buttons mt-10">
             <button class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
             <button onclick="logout()">Odhlásit se</button>
         </div>
