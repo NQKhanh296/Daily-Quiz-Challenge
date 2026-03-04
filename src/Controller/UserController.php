@@ -13,6 +13,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+/*use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;*/
 
 #[Route('/api/user')]
 class UserController extends AbstractController
@@ -24,6 +26,7 @@ class UserController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator,
         LoggerInterface $logger,
+        //CsrfTokenManagerInterface $csrfTokenManager,
         #[Autowire(service: 'limiter.username_change')] 
         RateLimiterFactory $usernameLimiter
     ): JsonResponse {
@@ -34,6 +37,14 @@ class UserController extends AbstractController
             $logger->warning('Unauthorized attempt to change username.');
             return $this->json(['error' => 'Pro změnu jména se musíš přihlásit.'], 401);
         }
+        /*
+        $submittedToken = $request->headers->get('X-CSRF-TOKEN');
+
+
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('change-username', $submittedToken))) {
+            $logger->warning('CSRF attack detected or token expired for user {id}', ['id' => $user->getId()]);
+            return $this->json(['error' => 'Neplatný bezpečnostní token.'], 403);
+        }*/
 
         $limiter = $usernameLimiter->create((string)$user->getId());
         if (false === $limiter->consume(1)->isAccepted()) {
@@ -44,6 +55,9 @@ class UserController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $newUsername = trim($data['username'] ?? '');
 
+        if (preg_match('/[<>]/', $newUsername)) {
+            return $this->json(['error' => 'Jméno obsahuje nepovolené znaky.'], 400);
+        }
         if (empty($newUsername)) {
             return $this->json(['error' => 'Uživatelské jméno nesmí být prázdné.'], 400);
         }
