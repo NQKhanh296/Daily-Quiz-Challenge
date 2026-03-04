@@ -1,15 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-{% endblock %}
-
 {% block body %}
 <div class="container">
-    <h1>Daily Quiz Challenge</h1>
+    <h1>Denní kvízová výzva</h1>
 
     <div id="authScreen" class="screen">
-        <h2>Vítej v Challenge</h2>
+        <h2>Vítej v kvízu</h2>
         <p class="subtitle">Získej nový kód nebo se vrať ke svému účtu.</p>
 
         <div id="wordDisplay" class="word-box">
@@ -33,7 +29,7 @@
 
     <div id="startScreen" class="screen hidden">
         <h2>Dnešní výzva</h2>
-        <p id="todayTopic">Téma: <span>Načítání...</span></p>
+        <p id="todayTopic" class="text-center">Téma: <span>Načítání...</span></p>
 
         <div class="buttons">
             <button onclick="startQuiz(1)">Lehká</button>
@@ -41,14 +37,13 @@
             <button onclick="startQuiz(3)">Těžká</button>
         </div>
 
-        <div class="divider">nebo se podívej na ostatní</div>
         <button class="secondary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
 
     <div id="quizScreen" class="screen hidden">
         <div class="header">
             <span>Otázka <span id="questionNum">1</span>/3</span>
-            <span> <span id="timer">0</span>s</span>
+            <span><span id="timer">0</span>s</span>
         </div>
 
         <h2 id="questionText">Načítám otázku</h2>
@@ -64,7 +59,7 @@
 
     <div id="resultScreen" class="screen hidden">
         <h2>Hotovo!</h2>
-        <p class="big">Tvoje skóre: <span id="finalScore">0</span></p>
+        <p class="big text-center">Tvoje skóre: <span id="finalScore">0</span></p>
         <p class="text-center">Čas: <span id="finalTime">0</span>s</p>
         <button class="primary" onclick="showLeaderboard()">Zobrazit žebříček</button>
     </div>
@@ -72,7 +67,7 @@
     <div id="leaderboardScreen" class="screen hidden">
         <h2>Žebříček TOP 10</h2>
 
-        <div class="current-user-stats">
+        <div class="current-user-stats text-center">
             <strong>Tvůj výsledek:</strong> <span id="playerCurrentAttempt">0</span> bodů (<span id="playerCurrentTime">0</span>s)
         </div>
 
@@ -80,7 +75,7 @@
 
         <div class="divider">nastavení účtu</div>
 
-        <button class="secondary" onclick="toggleUsernameForm()"> Změnit jméno</button>
+        <button class="secondary" onclick="toggleUsernameForm()">Změnit jméno</button>
 
         <div id="changeUsernameForm" class="hidden">
             <input type="text" id="newUsernameInput" class="input-field" placeholder="Nové uživatelské jméno">
@@ -93,8 +88,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    <script src="{{ asset('js/script.js') }}"></script>
 {% endblock %}
