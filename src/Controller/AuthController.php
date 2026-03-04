@@ -71,7 +71,6 @@ class AuthController extends AbstractController
             
             $session = $request->getSession();
             $session->migrate(); 
-            $session->set('temp_user_id', $user->getId());
 
             $this->logger->info("Uživatel ID {id} se úspěšně přihlásil.", ['id' => $user->getId()]);
 

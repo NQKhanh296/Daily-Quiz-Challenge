@@ -45,16 +45,11 @@ class QuizController extends AbstractController
         }
     }
 
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/start', methods: ['POST'])]
     public function start(Request $request): JsonResponse
     {
-        $userId = $request->getSession()->get('temp_user_id');
-        $user = $userId ? $this->userRepository->find($userId) : null;
-
-        if (!$user) {
-            $this->logger->warning('Unauthorized quiz start attempt.');
-            return $this->json(['error' => 'Přístup odepřen. Přihlas se.'], 403);
-        }
+        $user = $this->getUser();
 
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
         if (!$quiz) return $this->json(['error' => 'Kvíz není k dispozici.'], 404);
@@ -108,12 +103,11 @@ class QuizController extends AbstractController
         }
     }
 
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/submit-answer', methods: ['POST'])]
     public function submitAnswer(Request $request): JsonResponse
     {
-        $userId = $request->getSession()->get('temp_user_id');
-        $user = $userId ? $this->userRepository->find($userId) : null;
-        if (!$user) return $this->json(['error' => 'Neautorizováno.'], 403);
+        $user = $this->getUser();
 
         $data = json_decode($request->getContent(), true);
         $answerIndex = $data['answer_index'] ?? null;
@@ -153,12 +147,11 @@ class QuizController extends AbstractController
         }
     }
 
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/fetch-question', methods: ['GET'])]
     public function fetchQuestion(Request $request): JsonResponse
     {
-        $userId = $request->getSession()->get('temp_user_id');
-        $user = $userId ? $this->userRepository->find($userId) : null;
-        if (!$user) return $this->json(['error' => 'Uživatel nenalezen.'], 403);
+        $user = $this->getUser();
 
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
         $attempt = $this->attemptRepository->findOneBy(['user' => $user, 'quiz' => $quiz, 'is_completed' => false]);

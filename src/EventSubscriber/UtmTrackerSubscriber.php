@@ -1,5 +1,7 @@
 <?php
 
+// http://132.145.247.234/?utm_source=letak_jidelna&utm_medium=qr&utm_campaign=jaro2026
+
 namespace App\EventSubscriber;
 
 use App\Entity\Visit;
