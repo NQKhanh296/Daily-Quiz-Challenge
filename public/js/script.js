@@ -193,23 +193,42 @@ async function showLeaderboard() {
     const response = await fetch("/api/leaderboard");
     const data = await response.json();
     listEl.innerHTML = "";
-    data.forEach((user, index) => {
-      const li = document.createElement("li");
-      li.className = "leaderboard-item";
-      li.innerHTML = `<span class="rank ${index < 3 ? 'top'+(index+1) : ''}">${index+1}</span>
-                      <span>${user.username}</span>
-                      <span>${user.score}</span>`;
-      listEl.appendChild(li);
-    });
-  } catch (e) { listEl.innerHTML = "<li>Chyba žebříčku.</li>"; }
+
+    if (data.top10 && Array.isArray(data.top10)) {
+        data.top10.forEach((user, index) => {
+          const li = document.createElement("li");
+          li.className = "leaderboard-item";
+          li.innerHTML = `<span class="rank ${index < 3 ? 'top'+(index+1) : ''}">${index+1}</span>
+                          <span>${user.username}</span>
+                          <span>${user.score}</span>`;
+          listEl.appendChild(li);
+        });
+    }
+
+    if (data.currentUser) {
+        document.getElementById("currentUserScore").textContent = data.currentUser.score;
+        document.getElementById("currentUserRank").textContent = data.currentUser.rank ? data.currentUser.rank : "Neumístěn";
+    }
+
+  } catch (e) {
+      listEl.innerHTML = "<li>Chyba žebříčku.</li>";
+      console.error(e);
+  }
 }
 
 async function changeUsername() {
   const input = document.getElementById("newUsernameInput");
   const newUsername = input.value.trim();
 
+  const nameRegex = /^[a-zA-Z0-9_ěščřžýáíéúůóťďňĚŠČŘŽÝÁÍÉÚŮÓŤĎŇ]{3,20}$/;
+
   if (!newUsername) {
     alert("Zadej nové jméno!");
+    return;
+  }
+
+  if (!nameRegex.test(newUsername)) {
+    alert("Jméno musí mít 3 až 20 znaků a nesmí obsahovat speciální znaky (pouze písmena, čísla a podtržítka).");
     return;
   }
 
