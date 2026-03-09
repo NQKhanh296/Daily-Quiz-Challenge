@@ -8,3 +8,7 @@ framework:
       policy: "token_bucket"
       limit: 3
       rate: { interval: "15 minutes", amount: 1 }
+    api_limiter:
+      policy: "sliding_window"
+      limit: 50
+      interval: "1 minute"
