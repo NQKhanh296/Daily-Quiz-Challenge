@@ -3,13 +3,18 @@ let currentQuestion = 0;
 let score = 0;
 let timer = 0;
 let timerInterval;
+let lastScore = 0;
+let lastTime = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
   const savedWords = localStorage.getItem("quizLoginWords");
+
   if (savedWords) {
-    document.getElementById("manualWords").value = savedWords;
+    authenticateUser(savedWords.split(" "), true);
+  } else {
+    showScreen("authScreen");
+    generateNewWords();
   }
-  generateNewWords();
 });
 
 async function generateNewWords() {
@@ -24,17 +29,26 @@ async function generateNewWords() {
   }
 }
 
-async function authenticateUser() {
-  let words = [];
-  const manualInput = document.getElementById("manualWords").value.trim();
-
-  words = manualInput ? manualInput.split(/[\s,]+/).filter((w) => w.length > 0) : currentWords;
-
-  if (words.length !== 3) {
-    alert("Musíš zadat přesně 3 slova!");
+function registerUser() {
+  if (currentWords.length !== 3) {
+    alert("Slova ještě nebyla načtena. Zkus to za chvíli.");
     return;
   }
+  authenticateUser(currentWords, false);
+}
 
+function loginUser() {
+  const manualInput = document.getElementById("manualWords").value.trim();
+  const words = manualInput ? manualInput.split(/[\s,]+/).filter((w) => w.length > 0) : [];
+
+  if (words.length !== 3) {
+    alert("Musíš zadat přesně 3 slova oddělená mezerou!");
+    return;
+  }
+  authenticateUser(words, false);
+}
+
+async function authenticateUser(words, isAutoLogin = false) {
   try {
     const response = await fetch("/api/authenticate", {
       method: "POST",
@@ -45,14 +59,28 @@ async function authenticateUser() {
 
     if (response.ok) {
       localStorage.setItem("quizLoginWords", words.join(" "));
-      showScreen("startScreen");
       loadTodayQuiz();
+
+      const lastPlayed = localStorage.getItem("lastPlayedDate");
+      const today = new Date().toDateString();
+
+      if (lastPlayed === today) {
+        showLeaderboard();
+      } else {
+        showScreen("startScreen");
+      }
     } else {
-      const data = await response.json();
-      alert("Chyba: " + data.error);
+      if (isAutoLogin) {
+        localStorage.removeItem("quizLoginWords");
+        showScreen("authScreen");
+        generateNewWords();
+      } else {
+        const data = await response.json();
+        alert("Chyba: " + (data.error || "Neplatná slova."));
+      }
     }
   } catch (e) {
-    alert("Server neodpovídá.");
+    if (!isAutoLogin) alert("Server neodpovídá.");
   }
 }
 
@@ -76,6 +104,7 @@ async function startQuiz(selectedDifficulty) {
 
     if (!response.ok) {
       const errorData = await response.json();
+      localStorage.setItem("lastPlayedDate", new Date().toDateString());
       throw new Error(errorData.error || "Již jsi dnes hrál.");
     }
 
@@ -89,6 +118,9 @@ async function startQuiz(selectedDifficulty) {
     renderQuestion(data.question);
   } catch (error) {
     alert(error.message);
+    if (error.message.includes("hrál") || error.message.includes("played")) {
+      showLeaderboard();
+    }
   }
 }
 
@@ -168,13 +200,13 @@ async function finishQuiz() {
   showFinalResults(data.total_points || score);
 }
 
-let lastScore = 0;
-let lastTime = 0;
-
 function showFinalResults(totalPoints) {
   stopTimer();
   lastScore = totalPoints;
   lastTime = timer;
+
+  localStorage.setItem("lastPlayedDate", new Date().toDateString());
+
   document.getElementById("finalScore").textContent = lastScore;
   document.getElementById("finalTime").textContent = lastTime;
   showScreen("resultScreen");
@@ -182,6 +214,18 @@ function showFinalResults(totalPoints) {
 
 async function showLeaderboard() {
   showScreen("leaderboardScreen");
+
+  const lastPlayed = localStorage.getItem("lastPlayedDate");
+  const today = new Date().toDateString();
+  const btnBack = document.getElementById("btnBackToMenu");
+
+  if (btnBack) {
+    if (lastPlayed === today) {
+      btnBack.style.display = "none";
+    } else {
+      btnBack.style.display = "inline-block";
+    }
+  }
 
   document.getElementById("playerCurrentAttempt").textContent = lastScore;
   document.getElementById("playerCurrentTime").textContent = lastTime;
@@ -203,16 +247,22 @@ async function showLeaderboard() {
                           <span>${user.score}</span>`;
           listEl.appendChild(li);
         });
+
+        if (data.top10.length === 0) {
+          listEl.innerHTML = "<li>Zatím žádné výsledky. Buď první!</li>";
+        }
     }
 
     if (data.currentUser) {
-        document.getElementById("currentUserScore").textContent = data.currentUser.score;
-        document.getElementById("currentUserRank").textContent = data.currentUser.rank ? data.currentUser.rank : "Neumístěn";
+        const scoreEl = document.getElementById("currentUserScore");
+        const rankEl = document.getElementById("currentUserRank");
+        if (scoreEl) scoreEl.textContent = data.currentUser.score;
+        if (rankEl) rankEl.textContent = data.currentUser.rank ? data.currentUser.rank : "Neumístěn";
     }
 
   } catch (e) {
       listEl.innerHTML = "<li>Chyba žebříčku.</li>";
-      console.error(e);
+      console.error("Leaderboard chyba:", e);
   }
 }
 
@@ -248,6 +298,7 @@ async function changeUsername() {
     alert("Jméno bylo změněno!");
     input.value = "";
     document.getElementById("changeUsernameForm").classList.add("hidden");
+    showLeaderboard();
   } else if (response.status === 429) {
     alert("Příliš mnoho pokusů, zkus to za 15 minut.");
   } else if (response.status === 422) {
@@ -284,5 +335,6 @@ function showScreen(screenId) {
 
 function logout() {
   localStorage.removeItem("quizLoginWords");
+  localStorage.removeItem("lastPlayedDate");
   location.reload();
 }

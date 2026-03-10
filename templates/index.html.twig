@@ -4,27 +4,30 @@
 <div class="container">
     <h1>Denní kvízová výzva</h1>
 
-    <div id="authScreen" class="screen">
+    <div id="authScreen" class="screen hidden">
         <h2>Vítej v kvízu</h2>
-        <p class="subtitle">Získej nový kód nebo se vrať ke svému účtu.</p>
 
-        <div id="wordDisplay" class="word-box">
-            <span class="word">...</span>
-            <span class="word">...</span>
-            <span class="word">...</span>
+        <div class="auth-section">
+            <h3>Nová hra (Registrace)</h3>
+            <p class="small" style="color: #cbd5e1;">Tato 3 slova jsou tvůj unikátní klíč. <strong>Ulož si je!</strong></p>
+
+            <div id="wordDisplay" class="word-box">
+                <span class="word">...</span>
+                <span class="word">...</span>
+                <span class="word">...</span>
+            </div>
+
+            <button onclick="generateNewWords()" class="secondary">Vygenerovat jiná slova</button>
+            <button class="primary mt-10" onclick="registerUser()">Začít hrát s těmito slovy</button>
         </div>
 
-        <button onclick="generateNewWords()" id="genBtn">Vygenerovat jiná slova</button>
+        <div class="divider">MÁŠ UŽ SVÁ SLOVA?</div>
 
-        <div class="divider">nebo zadej svůj kód</div>
-
-        <input type="password" id="manualWords" class="input-field" placeholder="slovo1 slovo2 slovo3">
-
-        <button class="primary" onclick="authenticateUser()">Vstoupit do kvízu</button>
-
-        <p class="small">
-            Slova slouží jako váš unikátní login.
-        </p>
+        <div class="auth-section">
+            <h3>Přihlášení</h3>
+            <input type="text" id="manualWords" class="input-field" placeholder="zadej slovo1 slovo2 slovo3">
+            <button class="primary" onclick="loginUser()">Přihlásit se</button>
+        </div>
     </div>
 
     <div id="startScreen" class="screen hidden">
@@ -84,8 +87,8 @@
         </div>
 
         <div class="buttons mt-10">
-            <button class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
-            <button onclick="logout()">Odhlásit se</button>
+            <button id="btnBackToMenu" class="primary" onclick="showScreen('startScreen')">Zpět do menu</button>
+            <button class="secondary" onclick="logout()">Odhlásit se</button>
         </div>
     </div>
 </div>
