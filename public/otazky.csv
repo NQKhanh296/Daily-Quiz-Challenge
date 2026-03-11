@@ -1,0 +1,46 @@
+topic,difficulty,text,options,correct_index,used
+Zeměpis,1,Jaké je hlavní město Francie?,"[""Lyon"", ""Marseille"", ""Nice"", ""Paříž""]",3,False
+Zeměpis,1,Který oceán je největší na Zemi?,"[""Atlantský oceán"",""Tichý oceán"",""Indický oceán"", ""Severní ledový oceán""]",0,False
+Zeměpis,1,Která řeka protéká Prahou?,"[""Vltava"", ""Labe"", ""Dunaj"", ""Morava""]",0,False
+Zeměpis,2,Která země má největší rozlohu na světě?,"[""Rusko"", ""Kanada"", ""USA"", ""Čína""]",0,False
+Zeměpis,2,Jaké je hlavní město Austrálie?,"[""Sydney"", ""Melbourne"",""Canberra"",""Perth""]",2,False
+Zeměpis,2,Které pohoří odděluje Evropu a Asii?,"[""Ural"", ""Alpy"", ""Himaláje"", ""Kavkaz""]",0,False
+Zeměpis,3,Které je nejhlubší jezero na světě?,"[""Bajkal"", ""Tanganika"", ""Kaspické moře"", ""Hořejší jezero""]",0,False
+Zeměpis,3,Který stát má nejvíce obyvatel na světě (2024)?,"[""Indie"", ""Čína"", ""USA"", ""Indonésie""]",0,False
+Zeměpis,3,Která poušť je největší na světě?,"[""Arabská poušť"",""Sahara"",""Gobi"", ""Kalahari""]",1,False
+Fyzika,1,Jaká je jednotka síly v soustavě SI?,"[""Newton"", ""Joule"", ""Watt"", ""Pascal""]",0,False
+Fyzika,1,Která planeta je nejblíže Slunci?,"[""Venuše"", ""Země"",""Merkur"",""Mars""]",2,False
+Fyzika,1,Jakou rychlostí se přibližně šíří světlo ve vakuu?,"[""300000 km/s"", ""150000 km/s"", ""30000 km/s"", ""3000 km/s""]",0,False
+Fyzika,2,Který fyzik formuloval zákony pohybu?,"[""Albert Einstein"",""Galileo Galilei"",""Nikola Tesla"",""Isaac Newton""]",3,False
+Fyzika,2,Jaká je jednotka elektrického proudu?,"[""Ampér"", ""Volt"",""Ohm"",""Watt""]",0,False
+Fyzika,2,"Jak se nazývá síla,která přitahuje tělesa k Zemi?","[ ""Třecí síla"",""Odstředivá síla"",""Gravitační síla"",""Magnetická síla""]",2,False
+Fyzika,3,"Který zákon popisuje vztah mezi napětím, proudem a odporem?","[""Hookův zákon"",""Archimédův zákon"",""Ohmův zákon"",""Coulombův zákon""]",2,False
+Fyzika,3,Jaká je jednotka elektrického odporu?,"[""Ohm"", ""Volt"", ""Ampér"", ""Tesla""]",0,False
+Fyzika,3,Kdo vytvořil teorii relativity?,"[""Niels Bohr"", ""Max Planck"", ""Erwin Schrödinger"",""Albert Einstein""]",3,False
+Matematika,1,Kolik je 5 + 7?,"[""12"", ""10"", ""11"", ""13""]",0,False
+Matematika,1,Kolik má trojúhelník stran?,"[""3"", ""4"", ""5"", ""6""]",0,False
+Matematika,1,Kolik je 9 × 3?,"[""27"", ""21"", ""18"", ""24""]",0,False
+Matematika,2,Kolik stupňů má pravý úhel?,"[""90"", ""45"", ""180"", ""60""]",0,False
+Matematika,2,Jaký je výsledek 2²?,"[""4"", ""2"", ""6"", ""8""]",0,False
+Matematika,2,Kolik je odmocnina ze 16?,"[""4"", ""6"", ""8"", ""2""]",0,False
+Matematika,3,Kolik je derivace funkce x²?,"[""2x"", ""x"", ""x²"", ""2""]",0,False
+Matematika,3,Kolik je π přibližně?,"[""3.14"", ""2.14"", ""3.41"", ""3.04""]",0,False
+Matematika,3,Kolik řešení má rovnice x² = 4 v reálných číslech?,"[""2"", ""1"", ""0"", ""4""]",0,False
+Sport,1,Kolik hráčů má jeden tým na hřišti ve fotbale?,"[""11"", ""9"", ""10"", ""12""]",0,False
+Sport,1,Který sport je spojen s turnajem Wimbledon?,"[""Tenis"", ""Golf"", ""Kriket"", ""Badminton""]",0,False
+Sport,1,Jaký sport hraje Jaromír Jágr?,"[""Lední hokej"", ""Fotbal"", ""Tenis"", ""Basketbal""]",0,False
+Sport,2,Kolik bodů má trojka v basketbalu?,"[""3"", ""2"", ""1"", ""4""]",0,False
+Sport,2,Kde se konaly Letní olympijské hry 2016?,"[""Rio de Janeiro"", ""Londýn"", ""Tokio"", ""Peking""]",0,False
+Sport,2,Kolik setů se obvykle hraje ve volejbale na vítězství?,"[""3"", ""2"", ""4"", ""5""]",0,False
+Sport,3,Který stát vyhrál mistrovství světa ve fotbale 2018?,"[""Francie"", ""Chorvatsko"", ""Německo"", ""Brazílie""]",0,False
+Sport,3,Jak dlouhý je maraton?,"[""42.195 km"", ""40 km"", ""45 km"", ""50 km""]",0,False
+Sport,3,Který tenista má nejvíce grandslamových titulů ve dvouhře mužů (2024)?,"[""Novak Djoković"", ""Roger Federer"", ""Rafael Nadal"", ""Pete Sampras""]",0,False
+Hudba,1,Kolik strun má klasická kytara?,"[""6"", ""4"", ""5"", ""7""]",0,False
+Hudba,1,Který hudební nástroj má klávesy?,"[""Piano"", ""Housle"", ""Trumpeta"", ""Buben""]",0,False
+Hudba,1,Kdo byl členem skupiny Beatles?,"[""John Lennon"", ""Elvis Presley"", ""Freddie Mercury"", ""Mick Jagger""]",0,False
+Hudba,2,Který hudební skladatel složil symfonii Osudovou?,"[""Ludwig van Beethoven"", ""Mozart"", ""Bach"", ""Chopin""]",0,False
+Hudba,2,Jaký hudební nástroj hrál Wolfgang Amadeus Mozart?,"[""Klavír"", ""Kytara"", ""Bicí"", ""Saxofon""]",0,False
+Hudba,2,Který hudební styl je spojen s Louisem Armstrongem?,"[""Jazz"", ""Rock"", ""Hip hop"", ""Metal""]",0,False
+Hudba,3,Která kapela vydala album The Dark Side of the Moon?,"[""Pink Floyd"", ""Queen"", ""Led Zeppelin"", ""The Rolling Stones""]",0,False
+Hudba,3,Který skladatel složil Čtvero ročních dob?,"[""Antonio Vivaldi"", ""Johann Sebastian Bach"", ""Joseph Haydn"", ""Franz Schubert""]",0,False
+Hudba,3,Který český skladatel složil symfonii Z Nového světa?,"[""Antonín Dvořák"", ""Bedřich Smetana"", ""Leoš Janáček"", ""Bohuslav Martinů""]",0,False
