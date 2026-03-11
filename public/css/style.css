@@ -83,17 +83,19 @@ h2 {
   font-size: 0.9rem;
   color: #94a3b8;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
 }
 
 .divider::before,
 .divider::after {
   content: "";
-  display: inline-block;
-  width: 30%;
+  display: block;
+  flex-grow: 1;
   height: 1px;
   background: #475569;
-  margin: 0 10px;
-  vertical-align: middle;
 }
 
 .input-field {
