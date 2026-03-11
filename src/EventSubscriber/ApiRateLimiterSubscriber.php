@@ -5,12 +5,15 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
+
 
 class ApiRateLimiterSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private RateLimiterFactory $apiLimiter
+    #[Target('api_limiter.limiter')]
+    private RateLimiterFactory $apiLimiter
     ) {}
 
     public static function getSubscribedEvents(): array
