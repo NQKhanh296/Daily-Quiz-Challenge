@@ -1,6 +1,6 @@
 <?php
 
-// http://132.145.247.234/?utm_source=letak_jidelna&utm_medium=qr&utm_campaign=jaro2026
+// https://dennikvizovavyzva.online/?utm_source=plakat&utm_medium=qr_code&utm_campaign=jaro2026
 
 namespace App\EventSubscriber;
 
