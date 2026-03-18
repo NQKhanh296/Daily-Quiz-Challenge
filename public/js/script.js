@@ -128,24 +128,34 @@ function renderQuestion(questionData) {
   currentQuestion++;
   document.getElementById("questionNum").textContent = currentQuestion;
   document.getElementById("questionText").textContent = questionData.text;
-  document.getElementById("nextBtn").classList.add("hidden");
+
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.classList.add("hidden");
 
   const answersDiv = document.getElementById("answers");
   answersDiv.innerHTML = "";
 
   let options = typeof questionData.options === "string" ? JSON.parse(questionData.options) : questionData.options;
 
-  options.forEach((option, index) => {
+  let shuffledOptions = options.map((text, index) => ({
+    text: text,
+    originalIndex: index
+  })).sort(() => Math.random() - 0.5);
+
+  shuffledOptions.forEach((opt) => {
     const btn = document.createElement("button");
-    btn.textContent = option;
+    btn.textContent = opt.text;
     btn.className = "answer-btn";
-    btn.onclick = () => submitAnswer(index, btn);
+    btn.dataset.originalIndex = opt.originalIndex;
+
+    btn.onclick = () => submitAnswer(opt.originalIndex, btn);
     answersDiv.appendChild(btn);
   });
 }
 
 async function submitAnswer(answerIndex, clickedBtn) {
   const buttons = document.querySelectorAll(".answer-btn");
+
   buttons.forEach((btn) => (btn.disabled = true));
 
   try {
@@ -156,16 +166,21 @@ async function submitAnswer(answerIndex, clickedBtn) {
     });
 
     const data = await response.json();
+    console.log("Odpověď ze serveru:", data);
+
     if (data.correct) {
       clickedBtn.classList.add("correct");
     } else {
       clickedBtn.classList.add("wrong");
-      if (data.correct_index !== undefined && buttons[data.correct_index]) {
-        buttons[data.correct_index].classList.add("correct");
-      }
+
+      buttons.forEach(btn => {
+        if (parseInt(btn.dataset.originalIndex) === data.correct_index) {
+          btn.classList.add("correct");
+        }
+      });
     }
 
-    if (data.earned_points) {
+    if (data.earned_points !== undefined) {
       score += data.earned_points;
       document.getElementById("score").textContent = score;
     }
@@ -173,10 +188,16 @@ async function submitAnswer(answerIndex, clickedBtn) {
     const nextBtn = document.getElementById("nextBtn");
     nextBtn.textContent = currentQuestion < 3 ? "Další otázka" : "Dokončit kvíz";
     nextBtn.classList.remove("hidden");
-  } catch (error) { alert("Chyba při odesílání odpovědi."); }
+
+  } catch (error) {
+    console.error("Chyba:", error);
+    alert("Chyba při odesílání odpovědi.");
+  }
 }
 
 function handleNextStep() {
+  document.getElementById("nextBtn").classList.add("hidden");
+
   if (currentQuestion < 3) {
     loadNextQuestion();
   } else {
