@@ -21,20 +21,28 @@ class Attempt
     #[ORM\ManyToOne(inversedBy: 'attempts')]
     private ?Quiz $quiz = null;
 
-    #[ORM\Column]
-    private ?int $difficulty = null;
+    #[ORM\Column(nullable: false)]
+    private int $difficulty = 1;
 
-    #[ORM\Column]
-    private ?int $step = null;
+    #[ORM\Column(type: 'json', nullable: false)]
+    private array $answeredQuestions = [];
 
-    #[ORM\Column]
-    private ?int $points = null;
+    #[ORM\Column(nullable: false)]
+    private int $step = 0;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $last_interaction = null;
+    #[ORM\Column(nullable: false)]
+    private int $points = 0;
 
-    #[ORM\Column]
-    private ?bool $is_completed = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: false)]
+    private \DateTimeImmutable $last_interaction;
+
+    #[ORM\Column(nullable: false)]
+    private bool $is_completed = false;
+
+    public function __construct()
+    {
+        $this->last_interaction = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -49,7 +57,6 @@ class Attempt
     public function setUser(?User $user): static
     {
         $this->user = $user;
-
         return $this;
     }
 
@@ -61,11 +68,10 @@ class Attempt
     public function setQuiz(?Quiz $quiz): static
     {
         $this->quiz = $quiz;
-
         return $this;
     }
 
-    public function getDifficulty(): ?int
+    public function getDifficulty(): int
     {
         return $this->difficulty;
     }
@@ -73,11 +79,10 @@ class Attempt
     public function setDifficulty(int $difficulty): static
     {
         $this->difficulty = $difficulty;
-
         return $this;
     }
 
-    public function getStep(): ?int
+    public function getStep(): int
     {
         return $this->step;
     }
@@ -85,11 +90,10 @@ class Attempt
     public function setStep(int $step): static
     {
         $this->step = $step;
-
         return $this;
     }
 
-    public function getPoints(): ?int
+    public function getPoints(): int
     {
         return $this->points;
     }
@@ -97,11 +101,10 @@ class Attempt
     public function setPoints(int $points): static
     {
         $this->points = $points;
-
         return $this;
     }
 
-    public function getLastInteraction(): ?\DateTimeImmutable
+    public function getLastInteraction(): \DateTimeImmutable
     {
         return $this->last_interaction;
     }
@@ -109,7 +112,6 @@ class Attempt
     public function setLastInteraction(\DateTimeImmutable $last_interaction): static
     {
         $this->last_interaction = $last_interaction;
-
         return $this;
     }
 
@@ -121,6 +123,17 @@ class Attempt
     public function setIsCompleted(bool $is_completed): self
     {
         $this->is_completed = $is_completed;
+        return $this;
+    }
+
+    public function getAnsweredQuestions(): array
+    {
+        return $this->answeredQuestions;
+    }
+
+    public function setAnsweredQuestions(array $answeredQuestions): self
+    {
+        $this->answeredQuestions = $answeredQuestions;
         return $this;
     }
 }

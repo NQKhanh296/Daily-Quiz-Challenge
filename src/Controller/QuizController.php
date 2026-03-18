@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Attempt;
 use App\Repository\AttemptRepository;
 use App\Repository\QuizRepository;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/quiz')]
 class QuizController extends AbstractController
@@ -20,87 +20,98 @@ class QuizController extends AbstractController
         private EntityManagerInterface $entityManager,
         private QuizRepository $quizRepository,
         private AttemptRepository $attemptRepository,
-        private UserRepository $userRepository,
         private LoggerInterface $logger
     ) {}
 
     #[Route('/today', methods: ['GET'])]
     public function today(): JsonResponse
     {
-        try {
-            $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
-            
-            if (!$quiz) {
-                return $this->json(['error' => 'Kvíz pro dnešní den nebyl vytvořen.'], 404);
-            }
+        $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
 
-            return $this->json([
-                'id' => $quiz->getId(),
-                'topic' => $quiz->getTopic(),
-                'questions_count' => count($quiz->getQuestions())
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('Error fetching today\'s quiz: ' . $e->getMessage());
-            return $this->json(['error' => 'Nastala chyba při načítání kvízu.'], 500);
+        if (!$quiz) {
+            return $this->json(['error' => 'Kvíz neexistuje.'], 404);
         }
+
+        return $this->json([
+            'id' => $quiz->getId(),
+            'topic' => $quiz->getTopic(),
+            'questions_count' => count($quiz->getQuestions())
+        ]);
     }
 
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/start', methods: ['POST'])]
-    public function start(Request $request): JsonResponse
+    public function start(): JsonResponse
     {
         $user = $this->getUser();
-
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
-        if (!$quiz) return $this->json(['error' => 'Kvíz není k dispozici.'], 404);
 
-        $existingAttempt = $this->attemptRepository->findOneBy([
-            'user' => $user, 
-            'quiz' => $quiz, 
-            'is_completed' => true
-        ]);
-        
-        if ($existingAttempt) {
-            return $this->json(['error' => 'Dnes už jsi kvíz dokončil.'], 400);
+        if (!$user) {
+            return $this->json(['error' => 'Nejsi přihlášen.'], 401);
         }
 
-        $data = json_decode($request->getContent(), true);
-        $difficulty = isset($data['difficulty']) ? max(1, min(3, (int)$data['difficulty'])) : 1;
+        if (!$quiz) {
+            return $this->json(['error' => 'Kvíz není.'], 404);
+        }
 
-        try {
-            $attempt = new Attempt();
-            $attempt->setUser($user);
-            $attempt->setQuiz($quiz);
-            $attempt->setDifficulty($difficulty);
-            $attempt->setStep(0);
-            $attempt->setPoints(0);
-            $attempt->setIsCompleted(false);
-            $attempt->setLastInteraction(new \DateTimeImmutable()); 
+        $attempt = $this->attemptRepository->findOneBy([
+            'user' => $user,
+            'quiz' => $quiz,
+            'is_completed' => false
+        ]);
 
-            $this->entityManager->persist($attempt);
-            $this->entityManager->flush();
-
-            $this->logger->info("User {id} started quiz {quizId}", ['id' => $user->getId(), 'quizId' => $quiz->getId()]);
-
-            $questions = $quiz->getQuestions()->filter(fn($q) => (int)$q->getDifficulty() === $difficulty);
-            $questions = array_values($questions->toArray());
-
-            if (empty($questions)) {
-                return $this->json(['error' => 'Žádné otázky pro tuto obtížnost.'], 404);
+        if ($attempt) {
+            if ($attempt->getIsCompleted()) {
+                return $this->json(['error' => 'Kvíz už dokončen.'], 400);
             }
 
-            return $this->json([
-                'attempt_id' => $attempt->getId(),
-                'question' => [
-                    'text' => $questions[0]->getText(),
-                    'options' => $questions[0]->getOptions(),
-                    'step' => 1
-                ]
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to start quiz attempt: ' . $e->getMessage());
-            return $this->json(['error' => 'Chyba při startu kvízu.'], 500);
+            return $this->resumeAttempt($attempt, $quiz);
         }
+
+    
+        $attempt = new Attempt();
+        $attempt->setUser($user);
+        $attempt->setQuiz($quiz);
+        $attempt->setDifficulty(1);
+        $attempt->setStep(0);
+        $attempt->setAnsweredQuestions([]);
+        $attempt->setPoints(0);
+        $attempt->setIsCompleted(false);
+        $attempt->setLastInteraction(new \DateTimeImmutable());
+
+        $this->entityManager->persist($attempt);
+        $this->entityManager->flush();
+
+        return $this->resumeAttempt($attempt, $quiz);
+    }
+
+    private function getQuestions($quiz, $difficulty): array
+    {
+        return array_values(
+            $quiz->getQuestions()
+                ->filter(fn($q) => (int)$q->getDifficulty() === $difficulty)
+                ->toArray()
+        );
+    }
+
+    private function resumeAttempt(Attempt $attempt, $quiz): JsonResponse
+    {
+        $questions = $this->getQuestions($quiz, $attempt->getDifficulty());
+        $step = $attempt->getStep() ?? 0;
+
+        if (!isset($questions[$step])) {
+            return $this->json(['error' => 'Neplatný stav.'], 500);
+        }
+
+        $q = $questions[$step];
+
+        return $this->json([
+            'question' => [
+                'text' => $q->getText(),
+                'options' => $q->getOptions(),
+                'step' => $step + 1
+            ]
+        ]);
     }
 
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -108,89 +119,107 @@ class QuizController extends AbstractController
     public function submitAnswer(Request $request): JsonResponse
     {
         $user = $this->getUser();
+        $data = json_decode($request->getContent(), true) ?? [];
 
-        $data = json_decode($request->getContent(), true);
-        $answerIndex = $data['answer_index'] ?? null;
-
-        if ($answerIndex === null) {
-            return $this->json(['error' => 'Odpověď nebyla vybrána.'], 400);
+        if (!isset($data['answer_index'])) {
+            return $this->json(['error' => 'Chybí odpověď.'], 400);
         }
 
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
-        $attempt = $this->attemptRepository->findOneBy(['user' => $user, 'quiz' => $quiz, 'is_completed' => false]);
 
-        if (!$attempt) return $this->json(['error' => 'Aktivní pokus nenalezen.'], 404);
+        $attempt = $this->attemptRepository->findOneBy([
+            'user' => $user,
+            'quiz' => $quiz,
+            'is_completed' => false
+        ]);
 
-        try {
-            $questions = $quiz->getQuestions()->filter(fn($q) => (int)$q->getDifficulty() === $attempt->getDifficulty());
-            $questions = array_values($questions->toArray());
-            
-            $currentQuestion = $questions[$attempt->getStep()];
-            $now = new \DateTimeImmutable();
-            $duration = $now->getTimestamp() - $attempt->getLastInteraction()->getTimestamp();
-            
-            $isCorrect = ($answerIndex === $currentQuestion->getCorrectIndex());
-            
-            $earnedPoints = $isCorrect ? max(10, (100 * $attempt->getDifficulty()) - ($duration * 2)) : 0;
-
-            $attempt->setPoints($attempt->getPoints() + $earnedPoints);
-            $this->entityManager->flush();
-
-            return $this->json([
-                'correct' => $isCorrect,
-                'correct_index' => $currentQuestion->getCorrectIndex(),
-                'earned_points' => $earnedPoints
-            ]);
-        } catch (\Exception $e) {
-            $this->logger->error('Error processing answer: ' . $e->getMessage());
-            return $this->json(['error' => 'Chyba při zpracování odpovědi.'], 500);
+        if (!$attempt) {
+            return $this->json(['error' => 'Pokus nenalezen.'], 404);
         }
+
+        $questions = $this->getQuestions($quiz, $attempt->getDifficulty());
+        $index = $attempt->getStep() ?? 0;
+
+        if (!isset($questions[$index])) {
+            return $this->json(['error' => 'Neplatný stav.'], 400);
+        }
+
+       
+        $answered = $attempt->getAnsweredQuestions();
+
+        if (in_array($index, $answered, true)) {
+            return $this->json(['error' => 'Na tuto otázku už bylo odpovězeno.'], 400);
+        }
+
+        $question = $questions[$index];
+
+        $now = new \DateTimeImmutable();
+        $last = $attempt->getLastInteraction() ?? $now;
+        $duration = $now->getTimestamp() - $last->getTimestamp();
+
+        $isCorrect = ((int)$data['answer_index'] === $question->getCorrectIndex());
+
+        $earnedPoints = $isCorrect
+            ? max(10, (100 * $attempt->getDifficulty()) - ($duration * 2))
+            : 0;
+
+      
+        $answered[] = $index;
+        $attempt->setAnsweredQuestions($answered);
+
+       
+        $attempt->setStep($index + 1);
+        $attempt->setPoints($attempt->getPoints() + $earnedPoints);
+        $attempt->setLastInteraction($now);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'correct' => $isCorrect,
+            'earned_points' => $earnedPoints
+        ]);
     }
 
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[Route('/fetch-question', methods: ['GET'])]
-    public function fetchQuestion(Request $request): JsonResponse
+    public function fetchQuestion(): JsonResponse
     {
         $user = $this->getUser();
-
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
-        $attempt = $this->attemptRepository->findOneBy(['user' => $user, 'quiz' => $quiz, 'is_completed' => false]);
 
-        if (!$attempt) return $this->json(['error' => 'Pokus nenalezen.'], 404);
+        $attempt = $this->attemptRepository->findOneBy([
+            'user' => $user,
+            'quiz' => $quiz,
+            'is_completed' => false
+        ]);
 
-        try {
-            $nextStep = $attempt->getStep() + 1;
-            $questions = $quiz->getQuestions()->filter(fn($q) => (int)$q->getDifficulty() === $attempt->getDifficulty());
-            $questions = array_values($questions->toArray());
+        if (!$attempt) {
+            return $this->json(['error' => 'Pokus nenalezen.'], 404);
+        }
 
-            if ($nextStep >= 3 || $nextStep >= count($questions)) {
-                $attempt->setIsCompleted(true);
-                $user->setTotalScore(($user->getTotalScore() ?? 0) + $attempt->getPoints());
-                
-                $this->entityManager->flush();
-                $this->logger->info("User {id} finished quiz with {points} pts", ['id' => $user->getId(), 'points' => $attempt->getPoints()]);
+        $questions = $this->getQuestions($quiz, $attempt->getDifficulty());
+        $step = $attempt->getStep() ?? 0;
 
-                return $this->json([
-                    'status' => 'finished', 
-                    'total_points' => $attempt->getPoints(),
-                    'user_total_score' => $user->getTotalScore()
-                ]);
-            }
+        if ($step >= count($questions)) {
+            $attempt->setIsCompleted(true);
 
-            $attempt->setStep($nextStep);
-            $attempt->setLastInteraction(new \DateTimeImmutable());
+            $user = $attempt->getUser();
+            $user->setTotalScore(($user->getTotalScore() ?? 0) + $attempt->getPoints());
+
             $this->entityManager->flush();
 
-            $nextQuestion = $questions[$nextStep];
-
             return $this->json([
-                'text' => $nextQuestion->getText(),
-                'options' => $nextQuestion->getOptions(),
-                'step' => $nextStep + 1
+                'status' => 'finished',
+                'total_points' => $attempt->getPoints()
             ]);
-        } catch (\Exception $e) {
-            $this->logger->error('Error fetching next question: ' . $e->getMessage());
-            return $this->json(['error' => 'Chyba při načítání další otázky.'], 500);
         }
+
+        $q = $questions[$step];
+
+        return $this->json([
+            'text' => $q->getText(),
+            'options' => $q->getOptions(),
+            'step' => $step + 1
+        ]);
     }
 }
