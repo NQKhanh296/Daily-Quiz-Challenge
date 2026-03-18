@@ -40,19 +40,45 @@ class QuizController extends AbstractController
     }
 
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    #[Route('/start', methods: ['POST'])]
-    public function start(): JsonResponse
+    #[Route('/status', methods: ['GET'])]
+    public function checkStatus(): JsonResponse
     {
         $user = $this->getUser();
         $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
 
-        if (!$user) {
-            return $this->json(['error' => 'Nejsi přihlášen.'], 401);
+        if (!$quiz) return $this->json(['state' => 'no_quiz']);
+
+        $attempt = $this->attemptRepository->findOneBy([
+            'user' => $user,
+            'quiz' => $quiz,
+            'is_completed' => false
+        ]);
+
+        if (!$attempt) {
+            
+            $completed = $this->attemptRepository->findOneBy([
+                'user' => $user,
+                'quiz' => $quiz,
+                'is_completed' => true
+            ]);
+            return $this->json(['state' => $completed ? 'completed' : 'not_started']);
         }
 
-        if (!$quiz) {
-            return $this->json(['error' => 'Kvíz není.'], 404);
-        }
+       
+        return $this->resumeAttempt($attempt, $quiz);
+    }
+
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/start', methods: ['POST'])]
+    public function start(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_encode($request->getContent(), true) ?? [];
+        $difficulty = (int)($data['difficulty'] ?? 1); 
+
+        $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
+
+        if (!$quiz) return $this->json(['error' => 'Kvíz není.'], 404);
 
         $attempt = $this->attemptRepository->findOneBy([
             'user' => $user,
@@ -61,28 +87,51 @@ class QuizController extends AbstractController
         ]);
 
         if ($attempt) {
-            if ($attempt->getIsCompleted()) {
-                return $this->json(['error' => 'Kvíz už dokončen.'], 400);
-            }
-
             return $this->resumeAttempt($attempt, $quiz);
         }
 
-    
+      
+        $done = $this->attemptRepository->findOneBy(['user' => $user, 'quiz' => $quiz, 'is_completed' => true]);
+        if ($done) return $this->json(['error' => 'Dnes už máš hotovo.'], 400);
+
         $attempt = new Attempt();
         $attempt->setUser($user);
         $attempt->setQuiz($quiz);
-        $attempt->setDifficulty(1);
+        $attempt->setDifficulty($difficulty); 
         $attempt->setStep(0);
-        $attempt->setAnsweredQuestions([]);
         $attempt->setPoints(0);
         $attempt->setIsCompleted(false);
         $attempt->setLastInteraction(new \DateTimeImmutable());
+        $attempt->setAnsweredQuestions([]);
 
         $this->entityManager->persist($attempt);
         $this->entityManager->flush();
 
         return $this->resumeAttempt($attempt, $quiz);
+    }
+
+    private function resumeAttempt(Attempt $attempt, $quiz): JsonResponse
+    {
+        $questions = $this->getQuestions($quiz, $attempt->getDifficulty());
+        $step = $attempt->getStep() ?? 0;
+
+      
+        if ($step >= count($questions)) {
+             return $this->json(['state' => 'completed']);
+        }
+
+        $q = $questions[$step];
+
+        return $this->json([
+            'state' => 'in_progress',
+            'score' => $attempt->getPoints(),
+            'step' => $step + 1,
+            'total_steps' => count($questions),
+            'question' => [
+                'text' => $q->getText(),
+                'options' => $q->getOptions()
+            ]
+        ]);
     }
 
     private function getQuestions($quiz, $difficulty): array
@@ -92,26 +141,6 @@ class QuizController extends AbstractController
                 ->filter(fn($q) => (int)$q->getDifficulty() === $difficulty)
                 ->toArray()
         );
-    }
-
-    private function resumeAttempt(Attempt $attempt, $quiz): JsonResponse
-    {
-        $questions = $this->getQuestions($quiz, $attempt->getDifficulty());
-        $step = $attempt->getStep() ?? 0;
-
-        if (!isset($questions[$step])) {
-            return $this->json(['error' => 'Neplatný stav.'], 500);
-        }
-
-        $q = $questions[$step];
-
-        return $this->json([
-            'question' => [
-                'text' => $q->getText(),
-                'options' => $q->getOptions(),
-                'step' => $step + 1
-            ]
-        ]);
     }
 
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
