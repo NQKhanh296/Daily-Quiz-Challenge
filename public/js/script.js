@@ -39,7 +39,9 @@ function registerUser() {
 
 function loginUser() {
   const manualInput = document.getElementById("manualWords").value.trim();
-  const words = manualInput ? manualInput.split(/[\s,]+/).filter((w) => w.length > 0) : [];
+  const words = manualInput
+    ? manualInput.split(/[\s,]+/).filter((w) => w.length > 0)
+    : [];
 
   if (words.length !== 3) {
     alert("Musíš zadat přesně 3 slova oddělená mezerou!");
@@ -54,7 +56,7 @@ async function authenticateUser(words, isAutoLogin = false) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ words: words }),
-      credentials: 'include',
+      credentials: "include",
     });
 
     if (response.ok) {
@@ -67,7 +69,7 @@ async function authenticateUser(words, isAutoLogin = false) {
       if (lastPlayed === today) {
         showLeaderboard();
       } else {
-        showScreen("startScreen");
+        checkQuizStatus();
       }
     } else {
       if (isAutoLogin) {
@@ -83,6 +85,30 @@ async function authenticateUser(words, isAutoLogin = false) {
     if (!isAutoLogin) alert("Server neodpovídá.");
   }
 }
+async function checkQuizStatus() {
+  try {
+    const response = await fetch("/api/quiz/status");
+    const data = await response.json();
+
+    if (data.state === "in_progress") {
+      score = data.score;
+      currentQuestion = data.step - 1;
+      document.getElementById("score").textContent = score;
+
+      showScreen("quizScreen");
+      startTimer();
+      renderQuestion(data.question);
+    } else if (data.state === "completed") {
+      showLeaderboard();
+    } else {
+      showScreen("startScreen");
+      loadTodayQuiz();
+    }
+  } catch (e) {
+    console.error("Chyba při zjišťování stavu", e);
+    showScreen("startScreen");
+  }
+}
 
 async function loadTodayQuiz() {
   try {
@@ -91,7 +117,9 @@ async function loadTodayQuiz() {
     const data = await response.json();
     const topicElement = document.querySelector("#todayTopic span");
     if (topicElement) topicElement.textContent = data.topic || "Neznámé téma";
-  } catch (error) { console.error(error); }
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 async function startQuiz(selectedDifficulty) {
@@ -128,34 +156,27 @@ function renderQuestion(questionData) {
   currentQuestion++;
   document.getElementById("questionNum").textContent = currentQuestion;
   document.getElementById("questionText").textContent = questionData.text;
-
-  const nextBtn = document.getElementById("nextBtn");
-  nextBtn.classList.add("hidden");
+  document.getElementById("nextBtn").classList.add("hidden");
 
   const answersDiv = document.getElementById("answers");
   answersDiv.innerHTML = "";
 
-  let options = typeof questionData.options === "string" ? JSON.parse(questionData.options) : questionData.options;
+  let options =
+    typeof questionData.options === "string"
+      ? JSON.parse(questionData.options)
+      : questionData.options;
 
-  let shuffledOptions = options.map((text, index) => ({
-    text: text,
-    originalIndex: index
-  })).sort(() => Math.random() - 0.5);
-
-  shuffledOptions.forEach((opt) => {
+  options.forEach((option, index) => {
     const btn = document.createElement("button");
-    btn.textContent = opt.text;
+    btn.textContent = option;
     btn.className = "answer-btn";
-    btn.dataset.originalIndex = opt.originalIndex;
-
-    btn.onclick = () => submitAnswer(opt.originalIndex, btn);
+    btn.onclick = () => submitAnswer(index, btn);
     answersDiv.appendChild(btn);
   });
 }
 
 async function submitAnswer(answerIndex, clickedBtn) {
   const buttons = document.querySelectorAll(".answer-btn");
-
   buttons.forEach((btn) => (btn.disabled = true));
 
   try {
@@ -166,38 +187,30 @@ async function submitAnswer(answerIndex, clickedBtn) {
     });
 
     const data = await response.json();
-    console.log("Odpověď ze serveru:", data);
-
     if (data.correct) {
       clickedBtn.classList.add("correct");
     } else {
       clickedBtn.classList.add("wrong");
-
-      buttons.forEach(btn => {
-        if (parseInt(btn.dataset.originalIndex) === data.correct_index) {
-          btn.classList.add("correct");
-        }
-      });
+      if (data.correct_index !== undefined && buttons[data.correct_index]) {
+        buttons[data.correct_index].classList.add("correct");
+      }
     }
 
-    if (data.earned_points !== undefined) {
+    if (data.earned_points) {
       score += data.earned_points;
       document.getElementById("score").textContent = score;
     }
 
     const nextBtn = document.getElementById("nextBtn");
-    nextBtn.textContent = currentQuestion < 3 ? "Další otázka" : "Dokončit kvíz";
+    nextBtn.textContent =
+      currentQuestion < 3 ? "Další otázka" : "Dokončit kvíz";
     nextBtn.classList.remove("hidden");
-
   } catch (error) {
-    console.error("Chyba:", error);
     alert("Chyba při odesílání odpovědi.");
   }
 }
 
 function handleNextStep() {
-  document.getElementById("nextBtn").classList.add("hidden");
-
   if (currentQuestion < 3) {
     loadNextQuestion();
   } else {
@@ -260,30 +273,32 @@ async function showLeaderboard() {
     listEl.innerHTML = "";
 
     if (data.top10 && Array.isArray(data.top10)) {
-        data.top10.forEach((user, index) => {
-          const li = document.createElement("li");
-          li.className = "leaderboard-item";
-          li.innerHTML = `<span class="rank ${index < 3 ? 'top'+(index+1) : ''}">${index+1}</span>
+      data.top10.forEach((user, index) => {
+        const li = document.createElement("li");
+        li.className = "leaderboard-item";
+        li.innerHTML = `<span class="rank ${index < 3 ? "top" + (index + 1) : ""}">${index + 1}</span>
                           <span>${user.username}</span>
                           <span>${user.score}</span>`;
-          listEl.appendChild(li);
-        });
+        listEl.appendChild(li);
+      });
 
-        if (data.top10.length === 0) {
-          listEl.innerHTML = "<li>Zatím žádné výsledky. Buď první!</li>";
-        }
+      if (data.top10.length === 0) {
+        listEl.innerHTML = "<li>Zatím žádné výsledky. Buď první!</li>";
+      }
     }
 
     if (data.currentUser) {
-        const scoreEl = document.getElementById("currentUserScore");
-        const rankEl = document.getElementById("currentUserRank");
-        if (scoreEl) scoreEl.textContent = data.currentUser.score;
-        if (rankEl) rankEl.textContent = data.currentUser.rank ? data.currentUser.rank : "Neumístěn";
+      const scoreEl = document.getElementById("currentUserScore");
+      const rankEl = document.getElementById("currentUserRank");
+      if (scoreEl) scoreEl.textContent = data.currentUser.score;
+      if (rankEl)
+        rankEl.textContent = data.currentUser.rank
+          ? data.currentUser.rank
+          : "Neumístěn";
     }
-
   } catch (e) {
-      listEl.innerHTML = "<li>Chyba žebříčku.</li>";
-      console.error("Leaderboard chyba:", e);
+    listEl.innerHTML = "<li>Chyba žebříčku.</li>";
+    console.error("Leaderboard chyba:", e);
   }
 }
 
@@ -299,18 +314,20 @@ async function changeUsername() {
   }
 
   if (!nameRegex.test(newUsername)) {
-    alert("Jméno musí mít 3 až 20 znaků a nesmí obsahovat speciální znaky (pouze písmena, čísla a podtržítka).");
+    alert(
+      "Jméno musí mít 3 až 20 znaků a nesmí obsahovat speciální znaky (pouze písmena, čísla a podtržítka).",
+    );
     return;
   }
 
-  const response = await fetch('/api/user/change-username', {
-    method: 'PATCH',
+  const response = await fetch("/api/user/change-username", {
+    method: "PATCH",
     headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
     body: JSON.stringify({ username: newUsername }),
-    credentials: 'include'
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -347,10 +364,14 @@ function startTimer() {
   }, 1000);
 }
 
-function stopTimer() { clearInterval(timerInterval); }
+function stopTimer() {
+  clearInterval(timerInterval);
+}
 
 function showScreen(screenId) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+  document
+    .querySelectorAll(".screen")
+    .forEach((s) => s.classList.add("hidden"));
   document.getElementById(screenId).classList.remove("hidden");
 }
 
