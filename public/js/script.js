@@ -166,11 +166,19 @@ function renderQuestion(questionData) {
       ? JSON.parse(questionData.options)
       : questionData.options;
 
-  options.forEach((option, index) => {
+  let shuffledOptions = options.map((option, index) => ({
+    text: option,
+    originalIndex: index
+  }));
+
+  shuffledOptions.sort(() => Math.random() - 0.5);
+
+  shuffledOptions.forEach((opt) => {
     const btn = document.createElement("button");
-    btn.textContent = option;
+    btn.textContent = opt.text;
     btn.className = "answer-btn";
-    btn.onclick = () => submitAnswer(index, btn);
+    btn.dataset.originalIndex = opt.originalIndex;
+    btn.onclick = () => submitAnswer(opt.originalIndex, btn);
     answersDiv.appendChild(btn);
   });
 }
@@ -187,12 +195,17 @@ async function submitAnswer(answerIndex, clickedBtn) {
     });
 
     const data = await response.json();
+
     if (data.correct) {
       clickedBtn.classList.add("correct");
     } else {
       clickedBtn.classList.add("wrong");
-      if (data.correct_index !== undefined && buttons[data.correct_index]) {
-        buttons[data.correct_index].classList.add("correct");
+      if (data.correct_index !== undefined) {
+        buttons.forEach(btn => {
+          if (parseInt(btn.dataset.originalIndex) === data.correct_index) {
+            btn.classList.add("correct");
+          }
+        });
       }
     }
 
