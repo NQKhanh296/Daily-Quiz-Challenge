@@ -62,6 +62,12 @@ class UserController extends AbstractController
             return $this->json(['error' => 'Uživatelské jméno nesmí být prázdné.'], 400);
         }
 
+        $existingUser = $entityManager->getRepository(User::class)->findOneBy(['username' => $newUsername]);
+
+        if ($existingUser && $existingUser->getId() !== $user->getId()) {
+            return $this->json(['error' => 'Toto uživatelské jméno je již obsazeno.'], 409);
+        }
+
         $user->setUsername($newUsername);
         $errors = $validator->validate($user);
 

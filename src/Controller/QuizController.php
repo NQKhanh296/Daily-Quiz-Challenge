@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Attempt;
+use App\Entity\Quiz;
 use App\Repository\AttemptRepository;
 use App\Repository\QuizRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,13 +24,41 @@ class QuizController extends AbstractController
         private LoggerInterface $logger
     ) {}
 
+    private function getOrGenerateDailyQuiz(): ?Quiz
+    {
+        $today = new \DateTimeImmutable('today');
+        
+       
+        $quiz = $this->quizRepository->findOneBy(['date' => $today]);
+
+        if (!$quiz) {
+         
+            $allQuizzes = $this->quizRepository->findAll();
+            
+            if (empty($allQuizzes)) {
+                return null;
+            }
+
+           
+            $quiz = $allQuizzes[array_rand($allQuizzes)];
+            $quiz->setDate($today);
+
+          
+            $this->entityManager->flush();
+            
+            $this->logger->info("Žádný kvíz pro dnešek nebyl nalezen. Kvíz ID {id} byl zvolen jako dnešní.", ['id' => $quiz->getId()]);
+        }
+
+        return $quiz;
+    }
+
     #[Route('/today', methods: ['GET'])]
     public function today(): JsonResponse
     {
-        $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
+        $quiz = $this->getOrGenerateDailyQuiz();
 
         if (!$quiz) {
-            return $this->json(['error' => 'Kvíz neexistuje.'], 404);
+            return $this->json(['error' => 'V databázi nejsou žádné kvízy.'], 404);
         }
 
         return $this->json([
@@ -44,7 +73,7 @@ class QuizController extends AbstractController
     public function checkStatus(): JsonResponse
     {
         $user = $this->getUser();
-        $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
+        $quiz = $this->getOrGenerateDailyQuiz();
 
         if (!$quiz) return $this->json(['state' => 'no_quiz']);
 
@@ -55,7 +84,6 @@ class QuizController extends AbstractController
         ]);
 
         if (!$attempt) {
-            
             $completed = $this->attemptRepository->findOneBy([
                 'user' => $user,
                 'quiz' => $quiz,
@@ -64,7 +92,6 @@ class QuizController extends AbstractController
             return $this->json(['state' => $completed ? 'completed' : 'not_started']);
         }
 
-       
         return $this->resumeAttempt($attempt, $quiz);
     }
 
@@ -73,12 +100,15 @@ class QuizController extends AbstractController
     public function start(Request $request): JsonResponse
     {
         $user = $this->getUser();
-        $data = json_encode($request->getContent(), true) ?? [];
+        $data = json_decode($request->getContent(), true) ?? [];
         $difficulty = (int)($data['difficulty'] ?? 1); 
 
-        $quiz = $this->quizRepository->findOneBy(['date' => new \DateTimeImmutable('today')]);
+        $quiz = $this->getOrGenerateDailyQuiz();
+        if (!$quiz) return $this->json(['error' => 'Kvíz není k dispozici.'], 404);
 
-        if (!$quiz) return $this->json(['error' => 'Kvíz není.'], 404);
+        if (count($this->getQuestions($quiz, $difficulty)) === 0) {
+            return $this->json(['error' => 'Tato obtížnost není pro dnešní kvíz dostupná.'], 400);
+        }
 
         $attempt = $this->attemptRepository->findOneBy([
             'user' => $user,
@@ -90,9 +120,8 @@ class QuizController extends AbstractController
             return $this->resumeAttempt($attempt, $quiz);
         }
 
-      
         $done = $this->attemptRepository->findOneBy(['user' => $user, 'quiz' => $quiz, 'is_completed' => true]);
-        if ($done) return $this->json(['error' => 'Dnes už máš hotovo.'], 400);
+        if ($done) return $this->json(['error' => 'Dnes už máš tento kvíz hotový.'], 400);
 
         $attempt = new Attempt();
         $attempt->setUser($user);
