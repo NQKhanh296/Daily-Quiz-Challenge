@@ -4,7 +4,7 @@
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
+  background: linear-gradient(135deg, #324768, #152345);
   color: #f1f5f9;
   margin: 0;
   padding: 20px;
@@ -29,7 +29,7 @@ h2 {
 }
 
 .screen {
-  background: #1e293b;
+  background: #192332;
   padding: 30px;
   border-radius: 15px;
   margin-top: 20px;
@@ -45,9 +45,8 @@ h2 {
   display: none;
 }
 
-.subtitle {
-  text-align: center;
-  color: #94a3b8;
+.subtitle, .divider, .input-field::placeholder {
+  color: #cbd5e1;
 }
 
 .text-center {
@@ -81,7 +80,6 @@ h2 {
 .divider {
   margin: 20px 0;
   font-size: 0.9rem;
-  color: #94a3b8;
   position: relative;
   display: flex;
   align-items: center;
@@ -107,10 +105,6 @@ h2 {
   color: #f1f5f9;
   font-size: 1rem;
   margin-bottom: 15px;
-}
-
-.input-field::placeholder {
-  color: #94a3b8;
 }
 
 button {
@@ -156,7 +150,7 @@ p.small {
   text-align: center;
   margin-top: 15px;
   font-size: 0.8rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .header {
